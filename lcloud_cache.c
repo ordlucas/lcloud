@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <cmpsc311_log.h>
+#include <lcloud_support.h>
 #include <lcloud_cache.h>
 
 typedef struct {

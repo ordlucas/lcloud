@@ -17,6 +17,7 @@
 #include <lcloud_filesys.h>
 #include <lcloud_controller.h>
 #include <lcloud_cache.h>
+#include <lcloud_support.h>
 
 //
 // File system interface implementation
