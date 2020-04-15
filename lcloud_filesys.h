@@ -19,9 +19,9 @@
 
 // Type definitions
 typedef int32_t LcFHandle;
+typedef uint64_t LCloudRegisterFrame;
 
 // File system interface definitions
-
 LcFHandle lcopen( const char *path );
     // Open the file for for reading and writing
 
@@ -39,5 +39,9 @@ int lcclose( LcFHandle fh );
 
 int lcshutdown( void );
     // Shut down the filesystem
+
+int extract_lcloud_registers(LCloudRegisterFrame resp, int *b0, int *b1, int *c0, int *c1, 
+    int *c2, int *d0, int *d1);
+    // Helper function to extract information from register frame
 
 #endif

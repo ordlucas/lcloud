@@ -48,11 +48,11 @@ char * lcloud_getcache( LcDeviceId did, uint16_t sec, uint16_t blk ) {
         if(cache_array[i].dev == did && cache_array[i].sec == sec && cache_array[i].blk == blk) {
             hitc += 1;
             char *data_ptr = cache_array[i].data;
-            logMessage(LcDriverLLevel, "Block [%d/%d/%d] (t = %d) retrieved from cache", cache_array[i].dev, cache_array[i].sec, cache_array[i].blk, cache_array[i].t);
+            logMessage(LcDriverLLevel, "CACHE HIT: Block [%d/%d/%d] (t = %d) retrieved from cache", cache_array[i].dev, cache_array[i].sec, cache_array[i].blk, cache_array[i].t);
             return(data_ptr);
         }
     }
-    logMessage(LcDriverLLevel, "Block [%d/%d/%d] not found in cache", did, sec, blk);
+    logMessage(LcDriverLLevel, "CACHE MISS: Block [%d/%d/%d] not found in cache", did, sec, blk);
     missc += 1;
     /* Return not found */
     return( NULL );

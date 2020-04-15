@@ -52,3 +52,5 @@ Mkfile.old
 dkms.conf
 .vscode/settings.json
 assign4-psuedocode.txt
+.vscode/launch.json
+lcloud_client

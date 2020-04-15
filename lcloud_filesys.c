@@ -18,6 +18,7 @@
 #include <lcloud_controller.h>
 #include <lcloud_cache.h>
 #include <lcloud_support.h>
+#include <lcloud_network.h>
 
 //
 // File system interface implementation
@@ -109,11 +110,12 @@ int extract_lcloud_registers(LCloudRegisterFrame resp, int *b0, int *b1, int *c0
 // Outputs      : 0 if success, -1 if failure
 int devprobe_bus(void) {
     int b0, b1, c0, c1, c2, d0, d1;
-    LCloudRegisterFrame devprobe;
+    LCloudRegisterFrame resp, devprobe;
     int count = 0;
     if((devprobe = create_lcloud_register(0, 0, LC_DEVPROBE, 0, 0, 0, 0)) == -1 ||
-        extract_lcloud_registers(lcloud_io_bus(devprobe, NULL), &b0, &b1, &c0, &c1, &c2, &d0, &d1) == -1 ||
-        c0 != LC_DEVPROBE) {
+        (resp = client_lcloud_bus_request(devprobe, NULL)) == -1 ||
+        extract_lcloud_registers(resp, &b0, &b1, &c0, &c1, &c2, &d0, &d1) == -1 ||
+        b0 != 1 || b1 != 1 || c0 != LC_DEVPROBE) {
         return(-1);
     }
     
@@ -141,11 +143,12 @@ int devprobe_bus(void) {
 // Outputs      : 0 if success, -1 if failure
 int pwr_on_bus(void) {
     int b0, b1, c0, c1, c2, d0, d1;
-    LCloudRegisterFrame pwr_on;
+    LCloudRegisterFrame pwr_on, resp;
     pwr = 1;
     if((pwr_on = create_lcloud_register(0, 0, LC_POWER_ON, 0, 0, 0, 0)) == -1 ||
-        extract_lcloud_registers(lcloud_io_bus(pwr_on, NULL), &b0, &b1, &c0, &c1, &c2, &d0, &d1) == -1 ||
-        c0 != LC_POWER_ON) {
+        (resp = client_lcloud_bus_request(pwr_on, NULL)) == -1 ||
+        extract_lcloud_registers(resp, &b0, &b1, &c0, &c1, &c2, &d0, &d1) == -1 ||
+        b0 != 1 || b1 != 1 || c0 != LC_POWER_ON) {
         return(-1);
     }
     return(0);
@@ -160,11 +163,12 @@ int pwr_on_bus(void) {
 // Outputs      : 0 if success, -1 if failure
 int pwr_off_bus(void) {
     int b0, b1, c0, c1, c2, d0, d1;
-    LCloudRegisterFrame pwr_off;
+    LCloudRegisterFrame resp, pwr_off;
     pwr = 0;
     if((pwr_off = create_lcloud_register(0, 0, LC_POWER_OFF, 0, 0, 0, 0)) == -1 ||
-        extract_lcloud_registers(lcloud_io_bus(pwr_off, NULL), &b0, &b1, &c0, &c1, &c2, &d0, &d1) == -1 ||
-        c0 != LC_POWER_OFF) {
+        (resp = client_lcloud_bus_request(pwr_off, NULL)) == -1 ||
+        extract_lcloud_registers(resp, &b0, &b1, &c0, &c1, &c2, &d0, &d1) == -1 ||
+        b0 != 1 || b1 != 1 || c0 != LC_POWER_OFF) {
         return(-1);
     }
     return(0);
@@ -183,10 +187,11 @@ int pwr_off_bus(void) {
 // Outputs      : 0 if success, -1 if failure
 int read_bus(char *buf, int dev_id, int sec, int blk) {
     int b0, b1, c0, c1, c2, d0, d1;
-    LCloudRegisterFrame read;
+    LCloudRegisterFrame resp, read;
     if((read = create_lcloud_register(0, 0, LC_BLOCK_XFER, dev_id, LC_XFER_READ, sec, blk)) == -1 ||
-        extract_lcloud_registers(lcloud_io_bus(read, buf), &b0, &b1, &c0, &c1, &c2, &d0, &d1) == -1 || 
-        c0 != LC_BLOCK_XFER) {
+        (resp = client_lcloud_bus_request(read, buf)) == -1 ||
+        extract_lcloud_registers(resp, &b0, &b1, &c0, &c1, &c2, &d0, &d1) == -1 || 
+        b0 != 1 || b1 != 1 || c0 != LC_BLOCK_XFER) {
         return(-1);
     }
     return(0);
@@ -205,10 +210,11 @@ int read_bus(char *buf, int dev_id, int sec, int blk) {
 // Outputs      : 0 if success, -1 if failure
 int write_bus(char *buf, int dev_id, int sec, int blk) {
     int b0, b1, c0, c1, c2, d0, d1;
-    LCloudRegisterFrame write;
+    LCloudRegisterFrame resp, write;
     if((write = create_lcloud_register(0, 0, LC_BLOCK_XFER, dev_id, LC_XFER_WRITE, sec, blk)) == -1 ||
-        extract_lcloud_registers(lcloud_io_bus(write, buf), &b0, &b1, &c0, &c1, &c2, &d0, &d1) == -1 ||
-        c0 != LC_BLOCK_XFER) {
+        (resp = client_lcloud_bus_request(write, buf)) == -1 ||
+        extract_lcloud_registers(resp, &b0, &b1, &c0, &c1, &c2, &d0, &d1) == -1 ||
+        b0 != 1 || b1 != 1 || c0 != LC_BLOCK_XFER) {
         return(-1);
     }
     return(0);
@@ -223,10 +229,11 @@ int write_bus(char *buf, int dev_id, int sec, int blk) {
 // Outputs      : 0 if success, -1 if failure
 int devinit_bus(LcDevice *dev) {
     int b0, b1, c0, c1, c2, d0, d1;
-    LCloudRegisterFrame devinit;
+    LCloudRegisterFrame resp, devinit;
     if((devinit = create_lcloud_register(0, 0, LC_DEVINIT, dev->id, 0, 0, 0)) == -1 ||
-        extract_lcloud_registers(lcloud_io_bus(devinit, NULL), &b0, &b1, &c0, &c1, &c2, &d0, &d1) == -1 ||
-        c0 != LC_DEVINIT || c2 != dev->id) {
+        (resp = client_lcloud_bus_request(devinit, NULL)) == -1 ||
+        extract_lcloud_registers(resp, &b0, &b1, &c0, &c1, &c2, &d0, &d1) == -1 ||
+        b0 != 1 || b1 != 1 || c0 != LC_DEVINIT || c2 != dev->id) {
             return(-1);
         }
     dev->num_sec = d0;
