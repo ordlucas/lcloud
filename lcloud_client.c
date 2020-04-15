@@ -73,31 +73,30 @@ LCloudRegisterFrame client_lcloud_bus_request( LCloudRegisterFrame reg, void *bu
     // Reset register frame buffer
     memset(reg_buf, 0, sizeof(LCloudRegisterFrame));
 
-    // Read
-    if(c0 == LC_BLOCK_XFER && c2 == LC_XFER_READ) {
-        // Read server response and buffer data
-        if(read(socket_handle, reg_buf, sizeof(LCloudRegisterFrame)) == -1) return(-1);      
-        if(read(socket_handle, buf, LC_DEVICE_BLOCK_SIZE) == -1) return(-1);
+    switch(c0) {
+        case(LC_BLOCK_XFER):
+            if(c2 == LC_XFER_READ) {
+                // Read server response and buffer data
+                if(read(socket_handle, reg_buf, sizeof(LCloudRegisterFrame)) == -1) return(-1);      
+                if(read(socket_handle, buf, LC_DEVICE_BLOCK_SIZE) == -1) return(-1);
+            } else if(c2 == LC_XFER_WRITE) {
+            // Write buffer data and read server response
+                if(write(socket_handle, buf, LC_DEVICE_BLOCK_SIZE) == -1) return(-1);
+                if(read(socket_handle, reg_buf, sizeof(LCloudRegisterFrame)) == -1) return(-1);
+            }
+            break;
+        case(LC_POWER_OFF):
+            // Read server response and close connection
+            if(read(socket_handle, reg_buf, sizeof(LCloudRegisterFrame)) == -1) return(-1);
+            if(close(socket_handle) == -1) return(-1);
+            socket_handle = -1; // Reset socket descriptor
+            break;
+        default:
+            // Read server response
+            if(read(socket_handle, reg_buf, sizeof(LCloudRegisterFrame)) == -1) return(-1);
+            break;
     }
-    // Write
-    else if(c0 == LC_BLOCK_XFER && c2 == LC_XFER_WRITE) {
-        // Write buffer data and read server response
-        if(write(socket_handle, buf, LC_DEVICE_BLOCK_SIZE) == -1) return(-1);
-        if(read(socket_handle, reg_buf, sizeof(LCloudRegisterFrame)) == -1) return(-1);
-    }
-    // Power off
-    else if(c0 == LC_POWER_OFF) {
-        // Read server response and close connection
-        if(read(socket_handle, reg_buf, sizeof(LCloudRegisterFrame)) == -1) return(-1);
-        if(close(socket_handle) == -1) return(-1);
-        socket_handle = -1; // Reset socket descriptor
-    }
-    // Other
-    else {
-        // Read server response
-        if(read(socket_handle, reg_buf, sizeof(LCloudRegisterFrame)) == -1) return(-1);
-    }
-
+    
     // Copy register frame buffer to registerframe and convert to host byte order
     memcpy((char*) &inet_resp, reg_buf, sizeof(LCloudRegisterFrame));
     resp = htonll64(inet_resp);
