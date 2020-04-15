@@ -289,7 +289,6 @@ LcFHandle lcopen( const char *path ) {
         }
     }
 
-    // TODO
     // Check if the device cluster is powered on - if not, sends pwr_on signal
     if(pwr == 0) {
         if(pwr_on_bus() == -1) return(-1);
