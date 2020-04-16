@@ -4,7 +4,7 @@
 //  Description   : This is the client side of the Lion Clound network
 //                  communication protocol.
 //
-//  Author        : Lucas Benning
+//  Author        : Lucas (ord) Benning
 //  Last Modified : 4/15/2020
 //
 
@@ -36,6 +36,9 @@ size_t blk_length;
 //
 // Functions
 
+extern int extract_lcloud_registers(LCloudRegisterFrame resp, int *b0, int *b1, int *c0, int *c1,
+ int *c2, int *d0, int *d1);
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Function     : client_lcloud_bus_request
@@ -60,18 +63,29 @@ LCloudRegisterFrame client_lcloud_bus_request( LCloudRegisterFrame reg, void *bu
 
     // Create connection if it doesn't exist
     if(socket_handle == -1) {
+        /* 
+        Thanks libgcrypt reference manual! GNU documentation is pretty baller.
+        This client encrypts all data sent to the LCloud server and decrypts it upon
+        retrieval.
+        The cache is still stored in plaintext.
+        I have no clue how AES works and I could probably improve the error handling for
+        these gcrypt functions, but this'll do for now.
+        */
 
+        // Open AES128 CBC cipher on cipher_handle
         if(gcry_cipher_open(&cipher_handle, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CBC, 0)) {
             logMessage(LOG_ERROR_LEVEL, "Error opening cipher");
             return(-1);
         }
+        // Set key and block lengths (I think they're the same for AES, but whatever)
         key_length = gcry_cipher_get_algo_keylen(GCRY_CIPHER_AES128);
         blk_length = gcry_cipher_get_algo_blklen(GCRY_CIPHER_AES128);
-        cipher_key = malloc(key_length);
-        cipher_iv = malloc(blk_length);
+        // Allocate memory for key and IV and set to random data
+        if((cipher_key = malloc(key_length)) == NULL) return(-1);
+        if((cipher_iv = malloc(blk_length)) == NULL) return(-1);
         gcry_randomize(cipher_key, key_length, GCRY_WEAK_RANDOM);
         gcry_randomize(cipher_iv, blk_length, GCRY_WEAK_RANDOM);
-
+        // Set cipher key using said randomized data
         if(gcry_cipher_setkey(cipher_handle, cipher_key, key_length)) {
             logMessage(LOG_ERROR_LEVEL, "Error setting cipher key");
             return(-1);
@@ -104,10 +118,13 @@ LCloudRegisterFrame client_lcloud_bus_request( LCloudRegisterFrame reg, void *bu
                 // Read server response and buffer data
                 if(read(socket_handle, reg_buf, sizeof(LCloudRegisterFrame)) == -1) return(-1);  
                 if(read(socket_handle, encrypt_buf, buf_size) == -1) return(-1);
+                // Set IV for cipher
+                // Does this need to be done for every encrypt/decrypt? I have no idea.
                 if(gcry_cipher_setiv(cipher_handle, cipher_iv, blk_length)) {
                     logMessage(LOG_ERROR_LEVEL, "Error setting cipher IV");
                     return(-1);
                 }
+                // Decrypt data retrieved from device to buf
                 gcry_error_t gcryErr = gcry_cipher_decrypt(
                     cipher_handle, 
                     (void*) buf, 
@@ -115,16 +132,18 @@ LCloudRegisterFrame client_lcloud_bus_request( LCloudRegisterFrame reg, void *bu
                     (const void*) encrypt_buf, 
                     buf_size);
                 if(gcryErr) {
-                    gcry_err_code_t err_code= gcry_err_code(gcryErr);
-                    gcry_err_source_t err_source = gcry_err_source(gcryErr);
+                    // gcry_err_code_t err_code= gcry_err_code(gcryErr);
+                    // gcry_err_source_t err_source = gcry_err_source(gcryErr);
                     logMessage(LOG_ERROR_LEVEL, "Error decrypting buffer");
                     return(-1);
                 }
             } else if(c2 == LC_XFER_WRITE) {
+                // Set IV for cipher
                 if(gcry_cipher_setiv(cipher_handle, cipher_iv, blk_length)) {
                     logMessage(LOG_ERROR_LEVEL, "Error setting cipher IV");
                     return(-1);
                 }
+                // Encrypt data in buf to encrypt_buf
                 gcry_error_t gcryErr = gcry_cipher_encrypt(
                     cipher_handle, 
                     (void*) encrypt_buf, 
@@ -132,8 +151,8 @@ LCloudRegisterFrame client_lcloud_bus_request( LCloudRegisterFrame reg, void *bu
                     (const void*) buf, 
                     buf_size);
                 if(gcryErr) {
-                    gcry_err_code_t err_code= gcry_err_code(gcryErr);
-                    gcry_err_source_t err_source = gcry_err_source(gcryErr);
+                    // gcry_err_code_t err_code= gcry_err_code(gcryErr);
+                    // gcry_err_source_t err_source = gcry_err_source(gcryErr);
                     logMessage(LOG_ERROR_LEVEL, "Error encrypting buffer");
                     return(-1);
                 }    
@@ -147,6 +166,8 @@ LCloudRegisterFrame client_lcloud_bus_request( LCloudRegisterFrame reg, void *bu
             if(read(socket_handle, reg_buf, sizeof(LCloudRegisterFrame)) == -1) return(-1);
             if(close(socket_handle) == -1) return(-1);
             socket_handle = -1; // Reset socket descriptor
+
+            // Close cipher descriptor and free any alloc'd memory
             gcry_cipher_close(cipher_handle);
             free(cipher_key);
             free(cipher_iv);
