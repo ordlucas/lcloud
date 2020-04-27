@@ -15,7 +15,6 @@
 
 // Project Include Files
 #include <lcloud_controller.h>
-#include <lcloud_filesys.h>
 
 // Defines
 #define LCLOUD_MAX_BACKLOG 5

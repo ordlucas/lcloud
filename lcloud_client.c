@@ -29,7 +29,9 @@ struct sockaddr_in addr;
 
 //
 // Functions
-
+extern int extract_lcloud_registers(LCloudRegisterFrame resp, int *b0, int *b1, int *c0, int *c1,
+ int *c2, int *d0, int *d1);
+ 
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Function     : client_lcloud_bus_request
