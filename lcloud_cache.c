@@ -4,8 +4,8 @@
 //  Description    : This is the cache implementation for the LionCloud
 //                   assignment for CMPSC311.
 //
-//   Author        : Patrick McDaniel
-//   Last Modified : Thu 19 Mar 2020 09:27:55 AM EDT
+//   Author        : Lucas Benning
+//   Last Modified : 4/27/2020
 //
 
 // Includes 
